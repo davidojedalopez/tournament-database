@@ -5,6 +5,24 @@
 
 import psycopg2
 import time
+import contextlib
+
+@contextlib.contextmanager
+def with_cursor():
+    """Creates a connection to the database and a cursor with that connection. 
+    It also handles the commit and close operations on the database.
+    """
+    connection = connect()
+    cursor = connection.cursor()
+    try:
+        yield cursor
+    except:
+        raise
+    else:
+        connection.commit()
+    finally:
+        cursor.close()
+        connection.close()
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
@@ -12,30 +30,22 @@ def connect():
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    database_connection = connect()
-    cursor = database_connection.cursor()
     query = "DELETE FROM matches"
-    cursor.execute(query)
-    database_connection.commit()
-    database_connection.close()
+    with with_cursor() as cursor:        
+        cursor.execute(query)
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    database_connection = connect()
-    cursor = database_connection.cursor()
     query = "DELETE FROM players"
-    cursor.execute(query)
-    database_connection.commit()
-    database_connection.close()
+    with with_cursor() as cursor:        
+        cursor.execute(query)
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    database_connection = connect()
-    cursor = database_connection.cursor()
     query = "SELECT count(*) FROM players"
-    cursor.execute(query)
-    player_count = cursor.fetchone()
-    database_connection.close()
+    with with_cursor() as cursor:
+        cursor.execute(query)
+        player_count = cursor.fetchone()    
     return player_count[0]
 
 def registerPlayer(name):
@@ -47,12 +57,9 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-    database_connection = connect()
-    cursor = database_connection.cursor()
     query = "INSERT INTO players (name) VALUES ((%s))"
-    cursor.execute(query, (name,))
-    database_connection.commit()
-    database_connection.close()
+    with with_cursor() as cursor:
+        cursor.execute(query, (name,))
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
@@ -67,8 +74,6 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    database_connection = connect()
-    cursor = database_connection.cursor()
     query = """
         SELECT
             p.id,
@@ -90,23 +95,23 @@ def playerStandings():
             wins
         DESC
     """
-    cursor.execute(query)
-    player_standings = []
-    for row in cursor.fetchall():
-        player_standings.append(row)
-    database_connection.close()
+    with with_cursor() as cursor:
+        cursor.execute(query)
+        player_standings = []
+        for row in cursor.fetchall():
+            player_standings.append(row)
     return player_standings
 
 def checkSkippedRound():
-    database_connection = connect()
-    cursor = database_connection.cursor()
-    query = "SELECT id FROM players ORDER BY id LIMIT 1"
-    cursor.execute(query)
-    player_id = cursor.fetchone()[0]     
-    query = "INSERT INTO matches (winner_id) VALUES ({0})".format(player_id)
-    cursor.execute(query)
-    database_connection.commit()        
-    database_connection.close()
+    """Gives a skipped round to the first registered player only if there are
+    an odd number of players registered.
+    """
+    with with_cursor() as cursor:
+        query = "SELECT id FROM players ORDER BY id LIMIT 1"
+        cursor.execute(query)
+        player_id = cursor.fetchone()[0]     
+        query = "INSERT INTO matches (winner_id) VALUES (%s)"
+        cursor.execute(query, (player_id,))
     return player_id
 
 def reportMatch(winner, loser, draw=0):
@@ -116,21 +121,15 @@ def reportMatch(winner, loser, draw=0):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    database_connection = connect()
-    cursor = database_connection.cursor()
-    query = "INSERT INTO matches (player1_id, player2_id, winner_id) VALUES ({0}, {1}, {2})".format(winner, loser, winner)        
-    cursor.execute(query)
-    database_connection.commit()
-    database_connection.close()
+    query = "INSERT INTO matches (player1_id, player2_id, winner_id) VALUES ({0}, {1}, {2})".format(winner, loser, winner)   
+    with with_cursor() as cursor:     
+        cursor.execute(query)
  
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
   
-    Assuming that there are an even number of players registered, each player
-    appears exactly once in the pairings.  Each player is paired with another
-    player with an equal or nearly-equal win record, that is, a player adjacent
-    to him or her in the standings.
-  
+    Each player appears exactly once in the pairings. Each player is pairedwith another player with an equal or nearly-equal win record, that is, a player adjacent to him or her in the standings.
+
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
         id1: the first player's unique id
@@ -140,9 +139,16 @@ def swissPairings():
     """
     pairs_list = []
     temp_list = []
+    # Create a list of the standing players
     player_standings_list = playerStandings()
+    # For every player staning in the list
     for i in range(0, len(player_standings_list)):
+        # Append to the temporal list only the first two fields,
+        # which are the id and name of the player
         temp_list.append(player_standings_list[i][:2])
+        # If the temporal list already has two players,
+        # append these players to the pairs list and clear
+        # the temporal list
         if(i%2 != 0):            
             pairs_list.append(temp_list[0]+temp_list[1])
             temp_list = []

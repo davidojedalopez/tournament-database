@@ -25,9 +25,8 @@ To test that the database is working properly, you should follow this steps:
 	1. Open the command prompt.
 	2. Move to the unzipped known location.
 	3. Run the following commands:
-		3.1. createdb -U postgres tournament
-		3.2. psql -U postgres -d tournament -f tournament.sql
-		3.3. python tournament_test.py
+		3.1. psql -U postgres -f tournament.sql
+		3.2. python tournament_test.py
 
 This will run a series of unit and integration tests to confirm that the database is working properly. After that you can connect to the database running: psql tournament. Then, you can create, read, update and delete at your will.
 ------------
