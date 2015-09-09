@@ -121,9 +121,9 @@ def reportMatch(winner, loser, draw=0):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    query = "INSERT INTO matches (player1_id, player2_id, winner_id) VALUES ({0}, {1}, {2})".format(winner, loser, winner)   
+    query = "INSERT INTO matches (player1_id, player2_id, winner_id) VALUES (%s, %s, %s)"
     with with_cursor() as cursor:     
-        cursor.execute(query)
+        cursor.execute(query, (winner, loser, winner,))
  
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
