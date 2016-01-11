@@ -7,7 +7,7 @@ I. File list
 tournament.py 			Python implementation of the methods to access and query the database
 tournament.sql			SQL initialization code to import from PostgreSQL
 tournament_test.py 		Python test cases for the tournament.py methods
-README.txt				This file
+README.txt			This file
 ------------
 
 
@@ -34,4 +34,4 @@ This will run a series of unit and integration tests to confirm that the databas
 
 IV. Comments
 ------------
- Database supports the feature of giving a skipped round when there is an even number of players. This method is not tested on the tournament_test.py though
+Database supports the feature of giving a skipped round when there is an even number of players. This method is not tested on the tournament_test.py though
