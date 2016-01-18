@@ -1,10 +1,10 @@
-# Tournament Database
+# Tournament Database :trophy:
 
 ## About
 
 Python module that uses a PostgreSQL database to keep track of players and matches in a game tournament.
 
-## File list
+## File List
 
 | File | Description |
 |------|-------------|
