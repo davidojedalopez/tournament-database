@@ -1,3 +1,5 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/004a38500bf04451bd81398662c9e3ea)](https://www.codacy.com/app/david-ojeda-lopez/tournament-database)
+
 # Tournament Database :trophy:
 
 ## About
